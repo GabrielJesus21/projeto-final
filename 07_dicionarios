@@ -1,0 +1,24 @@
+
+
+
+
+
+
+# POR COMPLETAR.........
+
+
+
+
+
+#Remover par chave:valor
+alunos.pop("curso")
+print(alunos)
+
+#dicionario com idades
+idades = {
+    "ANA": 18,
+    "Bruno": 21,
+    "Carla": 22, 
+    "Dnaiel": 19,
+    "Edurada": 23
+}
