@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Jogos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h1 class="text-2xl font-bold mb-4 text-center">Lista de Jogos</h1>
+
+        <!-- Seção de Autenticação -->
+        <div id="auth-section">
+            <!-- Seção de Login -->
+            <div id="login-section">
+                <h2 class="text-lg font-semibold mb-2">Login</h2>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Usuário:</label>
+                    <input id="login-username" type="text" class="w-full p-2 border rounded">
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Senha:</label>
+                    <input id="login-password" type="password" class="w-full p-2 border rounded">
+                </div>
+                <button onclick="login()" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 mb-2">Login</button>
+                <button onclick="showRegister()" class="w-full bg-gray-300 text-black p-2 rounded hover:bg-gray-400">Criar Conta</button>
+            </div>
+
+            <!-- Seção de Registro -->
+            <div id="register-section" class="hidden">
+                <h2 class="text-lg font-semibold mb-2">Criar Conta</h2>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Usuário:</label>
+                    <input id="register-username" type="text" class="w-full p-2 border rounded">
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Senha:</label>
+                    <input id="register-password" type="password" class="w-full p-2 border rounded">
+                </div>
+                <button onclick="register()" class="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600 mb-2">Registrar</button>
+                <button onclick="showLogin()" class="w-full bg-gray-300 text-black p-2 rounded hover:bg-gray-400">Voltar ao Login</button>
+            </div>
+        </div>
+
+        <!-- Seção de Jogos -->
+        <div id="game-section" class="hidden">
+            <p id="welcome" class="mb-2"></p>
+            <button onclick="logout()" class="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600 mb-4">Logout</button>
+            
+            <div class="mb-4">
+                <input id="game-input" type="text" placeholder="Nome do jogo" class="w-full p-2 border rounded mb-2">
+                <button onclick="addGame()" class="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600">Adicionar Jogo</button>
+            </div>
+            
+            <h2 class="text-lg font-semibold mb-2">Sua Lista de Jogos</h2>
+            <ul id="game-list" class="list-disc pl-5"></ul>
+        </div>
+
+        <p id="message" class="text-center text-red-500 mt-4"></p>
+    </div>
+
+    <script>
+        function showMessage(msg, isError = true) {
+            const message = document.getElementById('message');
+            message.textContent = msg;
+            message.className = `text-center mt-4 ${isError ? 'text-red-500' : 'text-green-500'}`;
+            setTimeout(() => message.textContent = '', 3000);
+        }
+
+        function showLogin() {
+            document.getElementById('login-section').classList.remove('hidden');
+            document.getElementById('register-section').classList.add('hidden');
+        }
+
+        function showRegister() {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('register-section').classList.remove('hidden');
+        }
+
+        function updateUI() {
+            const authSection = document.getElementById('auth-section');
+            const gameSection = document.getElementById('game-section');
+            fetch('/api/games').then(res => {
+                if (res.ok) {
+                    authSection.classList.add('hidden');
+                    gameSection.classList.remove('hidden');
+                    res.json().then(data => {
+                        document.getElementById('welcome').textContent = `Bem-vindo, ${sessionStorage.getItem('username')}!`;
+                        updateGameList(data.games);
+                    });
+                } else {
+                    authSection.classList.remove('hidden');
+                    gameSection.classList.add('hidden');
+                    showLogin();
+                    sessionStorage.removeItem('username');
+                }
+            });
+        }
+
+        function updateGameList(games) {
+            const gameList = document.getElementById('game-list');
+            gameList.innerHTML = '';
+            games.forEach(game => {
+                const li = document.createElement('li');
+                li.textContent = game;
+                const button = document.createElement('button');
+                button.textContent = 'Remover';
+                button.className = 'ml-2 text-red-500 hover:underline';
+                button.onclick = () => removeGame(game);
+                li.appendChild(button);
+                gameList.appendChild(li);
+            });
+        }
+
+        function register() {
+            const username = document.getElementById('register-username').value;
+            const password = document.getElementById('register-password').value;
+            fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            }).then(res => res.json()).then(data => {
+                showMessage(data.message, !data.success);
+                if (data.success) {
+                    document.getElementById('register-username').value = '';
+                    document.getElementById('register-password').value = '';
+                    showLogin();
+                }
+            });
+        }
+
+        function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            }).then(res => res.json()).then(data => {
+                if (data.success) {
+                    sessionStorage.setItem('username', data.username);
+                    document.getElementById('login-username').value = '';
+                    document.getElementById('login-password').value = '';
+                    updateUI();
+                } else {
+                    showMessage(data.message);
+                }
+            });
+        }
+
+        function logout() {
+            fetch('/api/logout', { method: 'POST' }).then(() => {
+                sessionStorage.removeItem('username');
+                updateUI();
+                showMessage('Logout realizado com sucesso!', false);
+            });
+        }
+
+        function addGame() {
+            const game = document.getElementById('game-input').value;
+            if (!game) {
+                showMessage('Nome do jogo não pode ser vazio');
+                return;
+            }
+            fetch('/api/games', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ game })
+            }).then(res => res.json()).then(data => {
+                showMessage(data.message, !data.success);
+                if (data.success) {
+                    document.getElementById('game-input').value = '';
+                    updateUI();
+                }
+            });
+        }
+
+        function removeGame(game) {
+            fetch('/api/games', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ game })
+            }).then(res => res.json()).then(data => {
+                showMessage(data.message, !data.success);
+                if (data.success) updateUI();
+            });
+        }
+
+        // Inicializa a UI
+        updateUI();
+    </script>
+</body>
+</html>

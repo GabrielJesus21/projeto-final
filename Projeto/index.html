@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Controlo de Despesas</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f4f4f4; }
+    h1 { color: #333; }
+    input, select, button { margin: 5px; padding: 8px; }
+    .despesa { background: #fff; padding: 10px; margin: 5px 0; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Controlo de Despesas</h1>
+
+  <input type="text" id="descricao" placeholder="Descrição">
+  <input type="number" id="valor" placeholder="Valor (€)">
+  <select id="categoria">
+    <option value="Alimentação">Alimentação</option>
+    <option value="Transporte">Transporte</option>
+    <option value="Lazer">Lazer</option>
+  </select>
+  <button onclick="adicionarDespesa()">Adicionar</button>
+
+  <h2>Lista de Despesas</h2>
+  <div id="listaDespesas"></div>
+
+  <script>
+    let despesas = JSON.parse(localStorage.getItem("despesas")) || [];
+
+    function salvar() {
+      localStorage.setItem("despesas", JSON.stringify(despesas));
+    }
+
+    function renderizar() {
+      const lista = document.getElementById("listaDespesas");
+      lista.innerHTML = "";
+      despesas.forEach((despesa, index) => {
+        lista.innerHTML += `
+          <div class="despesa">
+            <strong>${despesa.descricao}</strong> - €${despesa.valor} [${despesa.categoria}]
+            <button onclick="removerDespesa(${index})">Remover</button>
+          </div>
+        `;
+      });
+    }
+
+    function adicionarDespesa() {
+      const descricao = document.getElementById("descricao").value;
+      const valor = parseFloat(document.getElementById("valor").value);
+      const categoria = document.getElementById("categoria").value;
+
+      if (!descricao || !valor) return alert("Preencha todos os campos!");
+
+      despesas.push({ descricao, valor, categoria });
+      salvar();
+      renderizar();
+
+      document.getElementById("descricao").value = "";
+      document.getElementById("valor").value = "";
+    }
+
+    function removerDespesa(index) {
+      despesas.splice(index, 1);
+      salvar();
+      renderizar();
+    }
+
+    renderizar();
+  </script>
+</body>
+</html>
